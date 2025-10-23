@@ -20,6 +20,12 @@ contract Fundme {
         pricefeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
     }
 
+    address public owner;
+
+    constructor(){
+        owner = msg.sender;
+    }
+
 
     function fund() public payable {
         (,int256 answer,,,) = pricefeed.latestRoundData();
@@ -36,5 +42,23 @@ contract Fundme {
         require(answer > 0, "ChainLink Error");
         return uint256(answer / 1e8);
     }
+
+    function withdraw() public onlyOwner{
+        for (uint256 funderIndex = 0; funderIndex < funders.length; funderIndex++){
+            address funder = funders[funderIndex];
+            addressToAmountFunded[funder] = 0;
+        }
+        funders = new address[](0);
+        (bool callSuccess, ) = payable(msg.sender).call{value: address(this).balance}("");
+        require(callSuccess, "Call Failed!");
+    }
+
+    modifier onlyOwner(){
+        require(msg.sender == owner, "Know Your Place! FOOL."); // xD
+        _;
+    }
+
+}
+
 
 }
